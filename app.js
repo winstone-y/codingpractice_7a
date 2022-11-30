@@ -32,7 +32,7 @@ startDbAndServer();
 //API 1
 
 app.get("/players/", async (request, response) => {
-  const getAllPlayersListQuery = `SELECT * FROM player_details ORDER BY player_id;`;
+  const getAllPlayersListQuery = `SELECT * FROM player_details;`;
   const result = await db.all(getAllPlayersListQuery);
 
   const convertDbObjectToResponseObject = (dbObject) => {
@@ -69,12 +69,12 @@ app.get("/players/:playerId/", async (request, response) => {
 });
 
 // API 3
-app.get("/players/:playerId/", async (request, response) => {
+app.put("/players/:playerId/", async (request, response) => {
   const { playerId } = request.params;
   const playerDetails = request.body;
   const { playerName } = playerDetails;
   const updatePlayerDetailsQuery = `UPDATE player_details SET player_name = '${playerName}'  WHERE player_id=${playerId};`;
-  await db.run(updatePlayerDetailsQuery);
+  const result = await db.run(updatePlayerDetailsQuery);
 
   response.send("Player Details Updated");
 });
@@ -144,7 +144,7 @@ app.get("/players/:playerId/playerScores", async (request, response) => {
   const { playerId } = request.params;
   const getPlayerScoreOfAllMatchesQuery = `
       SELECT player_details.player_id, player_details.player_name, SUM(player_match_score.score) AS total_score, SUM(player_match_score.fours) AS total_fours, SUM(player_match_score.sixes) AS total_sixes  FROM player_match_score LEFT JOIN player_details ON player_match_score.player_id = player_details.player_id WHERE player_details.player_id=${playerId};`;
-  const result = await db.all(getPlayerScoreOfAllMatchesQuery);
+  const result = await db.get(getPlayerScoreOfAllMatchesQuery);
   const convertDbObjectToResponseObject = (dbObject) => {
     return {
       playerId: dbObject.player_id,
@@ -155,9 +155,7 @@ app.get("/players/:playerId/playerScores", async (request, response) => {
     };
   };
 
-  const responseObject = result.map((object) =>
-    convertDbObjectToResponseObject(object)
-  );
+  const responseObject = convertDbObjectToResponseObject(result);
 
   response.send(responseObject);
 });
